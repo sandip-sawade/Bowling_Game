@@ -1,0 +1,13 @@
++------------------+
+|   BowlingGame    |
++------------------+
+| - rolls: vector<int>             |
++------------------+
+| + roll(pins: int): void         |
+| + score(): int                  |
+| - getRoll(index: int): int      |
+| - isStrike(index: int): bool    |
+| - isSpare(index: int): bool     |
+| - validateFrame(index: int): void |
+| - printFrame(frameNum: int, frameScore: int, totalScore: int): void |
++------------------+
