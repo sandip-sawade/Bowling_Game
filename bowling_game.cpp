@@ -1,10 +1,16 @@
 #include <iostream>
 #include <vector>
 #include <iomanip>
+#include <stdexcept>
+
+using namespace std;
 
 class BowlingGame {
 public:
     void roll(int pins) {
+        if (pins < 0 || pins > 10) {
+            throw std::invalid_argument("Invalid pin count. Pins must be between 0 and 10.");
+        }
         rolls.push_back(pins);
     }
 
@@ -13,22 +19,30 @@ public:
         int rollIndex = 0;
 
         for (int frame = 0; frame < 10; ++frame) {
+            if (rollIndex >= rolls.size()) {
+                throw std::out_of_range("Not enough rolls to complete the game.");
+            }
+
             if (isStrike(rollIndex)) {
-                int frameScore = 10 + strikeBonus(rollIndex);
-                totalScore += frameScore;
-                printFrame(frame + 1, frameScore, totalScore);
+                int bonus = getRoll(rollIndex + 1) + getRoll(rollIndex + 2);
+                totalScore += 10 + bonus;
+                printFrame(frame + 1, 10 + bonus, totalScore);
                 rollIndex += 1;
             } else if (isSpare(rollIndex)) {
-                int frameScore = 10 + spareBonus(rollIndex);
-                totalScore += frameScore;
-                printFrame(frame + 1, frameScore, totalScore);
+                int bonus = getRoll(rollIndex + 2);
+                totalScore += 10 + bonus;
+                printFrame(frame + 1, 10 + bonus, totalScore);
+                validateFrame(rollIndex);  // Check if frame roll sum exceeds 10
                 rollIndex += 2;
             } else {
-                int frameScore = sumOfBallsInFrame(rollIndex);
+                int frameScore = getRoll(rollIndex) + getRoll(rollIndex + 1);
+                validateFrame(rollIndex);
                 totalScore += frameScore;
                 printFrame(frame + 1, frameScore, totalScore);
                 rollIndex += 2;
             }
+
+            if (frame == 9) break;  // 10th frame logic is embedded in the roll data
         }
 
         return totalScore;
@@ -37,34 +51,26 @@ public:
 private:
     std::vector<int> rolls;
 
-    bool isStrike(int index) {
-        return index < rolls.size() && rolls[index] == 10;
+    int getRoll(int index) const {
+        if (index >= rolls.size()) return 0;
+        return rolls[index];
     }
 
-    bool isSpare(int index) {
-        return index + 1 < rolls.size() &&
-               rolls[index] + rolls[index + 1] == 10;
+    bool isStrike(int index) const {
+        return getRoll(index) == 10;
     }
 
-    int strikeBonus(int index) {
-        if (index + 2 < rolls.size()) {
-            return rolls[index + 1] + rolls[index + 2];
+    bool isSpare(int index) const {
+        return getRoll(index) + getRoll(index + 1) == 10;
+    }
+
+    void validateFrame(int index) {
+        if (getRoll(index) != 10) {
+            int sum = getRoll(index) + getRoll(index + 1);
+            if (sum > 10) {
+                throw std::logic_error("Frame score exceeds 10 pins.");
+            }
         }
-        return 0;
-    }
-
-    int spareBonus(int index) {
-        if (index + 2 < rolls.size()) {
-            return rolls[index + 2];
-        }
-        return 0;
-    }
-
-    int sumOfBallsInFrame(int index) {
-        if (index + 1 < rolls.size()) {
-            return rolls[index] + rolls[index + 1];
-        }
-        return rolls[index]; // In case of incomplete data
     }
 
     void printFrame(int frameNumber, int frameScore, int totalScore) {
@@ -76,27 +82,29 @@ private:
 
 int main() {
     BowlingGame game;
-
-    // Generic: you can replace this input with any sequence of rolls
-    std::vector<int> rolls;
-
-    std::cout << "Enter the rolls (enter -1 to end):" << std::endl;
+    std::vector<int> inputRolls;
     int pin;
-    while (std::cin >> pin && pin != -1) {
-        if (pin < 0 || pin > 10) {
-            std::cout << "Invalid input. Enter a number between 0 and 10.\n";
-            continue;
+
+    std::cout << "Enter the rolls (0-10), separated by space, end with -1:\n";
+
+    try {
+        while (std::cin >> pin && pin != -1) {
+            game.roll(pin);  // Validation inside roll()
         }
-        rolls.push_back(pin);
-    }
 
-    for (int pins : rolls) {
-        game.roll(pins);
-    }
+        std::cout << "\n=== SCORE SUMMARY ===\n";
+        int total = game.score();
+        std::cout << "\nFinal Total Score: " << total << std::endl;
 
-    std::cout << "\n=== SCORE SUMMARY ===" << std::endl;
-    int total = game.score();
-    std::cout << "\nFinal Total Score: " << total << std::endl;
+    } catch (const std::invalid_argument& e) {
+        std::cerr << "[Invalid Input] " << e.what() << std::endl;
+    } catch (const std::logic_error& e) {
+        std::cerr << "[Logical Error] " << e.what() << std::endl;
+    } catch (const std::out_of_range& e) {
+        std::cerr << "[Out of Range] " << e.what() << std::endl;
+    } catch (...) {
+        std::cerr << "[Unknown Error] Something went wrong." << std::endl;
+    }
 
     return 0;
 }
