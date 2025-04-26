@@ -29,20 +29,18 @@ public:
                 printFrame(frame + 1, 10 + bonus, totalScore);
                 rollIndex += 1;
             } else if (isSpare(rollIndex)) {
+                validateFrame(rollIndex);
                 int bonus = getRoll(rollIndex + 2);
                 totalScore += 10 + bonus;
                 printFrame(frame + 1, 10 + bonus, totalScore);
-                validateFrame(rollIndex);  // Check if frame roll sum exceeds 10
                 rollIndex += 2;
             } else {
-                int frameScore = getRoll(rollIndex) + getRoll(rollIndex + 1);
                 validateFrame(rollIndex);
+                int frameScore = getRoll(rollIndex) + getRoll(rollIndex + 1);
                 totalScore += frameScore;
                 printFrame(frame + 1, frameScore, totalScore);
                 rollIndex += 2;
             }
-
-            if (frame == 9) break;  // 10th frame logic is embedded in the roll data
         }
 
         return totalScore;
@@ -65,7 +63,7 @@ private:
     }
 
     void validateFrame(int index) {
-        if (getRoll(index) != 10) {
+        if (getRoll(index) != 10) { // not a strike
             int sum = getRoll(index) + getRoll(index + 1);
             if (sum > 10) {
                 throw std::logic_error("Frame score exceeds 10 pins.");
@@ -79,6 +77,8 @@ private:
                   << ", Total Score = " << std::setw(3) << totalScore << std::endl;
     }
 };
+
+// === MAIN ===
 
 int main() {
     BowlingGame game;
